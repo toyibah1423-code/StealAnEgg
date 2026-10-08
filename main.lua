@@ -1,14 +1,28 @@
-local BASE = "https://raw.githubusercontent.com/toyibah1423-code/StealAnEgg/main/"
+local BASE =
+    "https://raw.githubusercontent.com/toyibah1423-code/StealAnEgg/main/"
 
 local function loadModule(path)
-    local source = game:HttpGet(BASE .. path)
+    local ok, source = pcall(function()
+        return game:HttpGet(BASE .. path)
+    end)
+
+    if not ok then
+        error("Gagal mengambil " .. path .. "\n" .. tostring(source))
+    end
+
     local fn, err = loadstring(source)
 
     if not fn then
-        error("Failed to load " .. path .. ": " .. tostring(err))
+        error("Gagal compile " .. path .. "\n" .. tostring(err))
     end
 
-    return fn()
+    local success, result = pcall(fn)
+
+    if not success then
+        error("Gagal menjalankan " .. path .. "\n" .. tostring(result))
+    end
+
+    return result
 end
 
 local Config = loadModule("config.lua")
@@ -23,30 +37,58 @@ local app = UI:Create({
     Version = Config.Version
 })
 
-UI:AddTab("Main")
-UI:AddTab("Eggs")
-UI:AddTab("Player")
-UI:AddTab("Settings")
+app:AddTab("Main")
+app:AddTab("Eggs")
+app:AddTab("Player")
+app:AddTab("Settings")
 
-UI:AddToggle("Main", "Auto Collect", false, function(enabled)
-    Eggs:SetAutoCollect(enabled)
-end)
+app:AddToggle(
+    "Main",
+    "Auto Collect",
+    false,
+    function(enabled)
+        Eggs:SetAutoCollect(enabled)
+    end
+)
 
-UI:AddToggle("Main", "Auto Pickup", false, function(enabled)
-    Eggs:SetAutoPickup(enabled)
-end)
+app:AddToggle(
+    "Main",
+    "Auto Pickup",
+    false,
+    function(enabled)
+        Eggs:SetAutoPickup(enabled)
+    end
+)
 
-UI:AddToggle("Player", "Flight", false, function(enabled)
-    Player:SetFlight(enabled)
-end)
+app:AddToggle(
+    "Player",
+    "Flight",
+    false,
+    function(enabled)
+        Player:SetFlight(enabled)
+    end
+)
 
-UI:AddButton("Eggs", "Refresh Eggs", function()
-    Eggs:Refresh()
-end)
+app:AddButton(
+    "Eggs",
+    "Refresh Eggs",
+    function()
+        local eggs = Eggs:Refresh()
 
-UI:AddButton("Settings", "Destroy UI", function()
-    UI:Destroy()
-end)
+        Notifications:Send(
+            "Eggs",
+            "Found " .. tostring(#eggs) .. " egg(s)."
+        )
+    end
+)
+
+app:AddButton(
+    "Settings",
+    "Destroy UI",
+    function()
+        app:Destroy()
+    end
+)
 
 Notifications:Send(
     "Steal An Egg",
